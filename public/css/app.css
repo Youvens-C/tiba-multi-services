@@ -1,0 +1,688 @@
+/* ==========================================================================
+   Tiba Multi-Services — Design tokens
+   Palette dérivée du logo : bleu marin (structure/confiance) + vert (accent,
+   validation, croissance) + blanc (clarté, lisibilité des montants).
+   ========================================================================== */
+
+:root {
+  --navy: #2C4A5E;
+  --navy-dark: #1F3A4D;
+  --navy-darker: #162936;
+  --green: #7CB342;
+  --green-dark: #5C9130;
+  --green-light: #EAF3DE;
+
+  --bg: #F4F6F7;
+  --white: #FFFFFF;
+
+  --text: #223140;
+  --text-muted: #67787F;
+  --text-on-navy: #E9EFF2;
+  --text-on-navy-muted: #9FB2BE;
+
+  --border: #E1E6E8;
+  --border-strong: #C7D0D4;
+
+  --danger: #C0392B;
+  --danger-light: #FBEAE8;
+  --warning: #B9860B;
+  --warning-light: #FBF1DC;
+
+  --radius: 8px;
+  --radius-lg: 14px;
+  --shadow-card: 0 1px 2px rgba(22, 41, 54, 0.06);
+
+  --sidebar-w: 248px;
+  --topbar-h: 64px;
+
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: 'Poppins', var(--font-sans);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--navy-darker);
+  font-weight: 600;
+  font-family: var(--font-heading);
+}
+
+a { color: var(--navy); text-decoration: none; }
+a:hover { color: var(--green-dark); }
+
+/* ==========================================================================
+   Boutons — un seul accent (vert) pour l'action principale, navy pour le
+   secondaire, jamais les deux pleins sur le même écran.
+   ========================================================================== */
+
+.btn-tiba-primary {
+  background: var(--green);
+  border: 1px solid var(--green);
+  color: var(--white);
+  font-weight: 600;
+  border-radius: var(--radius);
+  padding: 0.55rem 1.25rem;
+  transition: background 0.15s ease;
+}
+.btn-tiba-primary:hover { background: var(--green-dark); border-color: var(--green-dark); color: var(--white); }
+
+.btn-tiba-secondary {
+  background: var(--white);
+  border: 1px solid var(--border-strong);
+  color: var(--navy);
+  font-weight: 600;
+  border-radius: var(--radius);
+  padding: 0.55rem 1.25rem;
+}
+.btn-tiba-secondary:hover { background: var(--bg); }
+
+.btn-tiba-danger {
+  background: var(--white);
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  font-weight: 600;
+  border-radius: var(--radius);
+  padding: 0.4rem 0.9rem;
+}
+.btn-tiba-danger:hover { background: var(--danger); color: var(--white); }
+
+/* ==========================================================================
+   Sidebar — ouvrable / fermable, navy plein, icônes + libellés, accent vert
+   sur l'item actif. En collapsed : icônes seules, libellés en tooltip natif.
+   ========================================================================== */
+
+.sidebar {
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  width: var(--sidebar-w);
+  background: var(--navy);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease;
+  z-index: 1030;
+  overflow-x: hidden;
+  transform: translateX(0);
+}
+.sidebar.hidden { transform: translateX(-100%); }
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.1rem 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  min-height: var(--topbar-h);
+}
+.sidebar-brand img {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: var(--white);
+  padding: 3px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+.sidebar-brand span {
+  color: var(--text-on-navy);
+  font-weight: 700;
+  font-size: 1rem;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 0.75rem 0.5rem;
+  overflow-y: auto;
+}
+.sidebar-nav .nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius);
+  color: var(--text-on-navy-muted);
+  font-weight: 500;
+  font-size: 0.92rem;
+  white-space: nowrap;
+  margin-bottom: 2px;
+}
+.sidebar-nav .nav-link i { font-size: 1.15rem; width: 22px; text-align: center; flex-shrink: 0; }
+.sidebar-nav .nav-link:hover { background: rgba(255,255,255,0.06); color: var(--text-on-navy); }
+.sidebar-nav .nav-link.active {
+  background: var(--green);
+  color: var(--white);
+}
+
+.sidebar-toggle {
+  border: none;
+  background: rgba(255,255,255,0.06);
+  color: var(--text-on-navy);
+  width: 32px; height: 32px;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.sidebar-toggle:hover { background: rgba(255,255,255,0.14); }
+
+.sidebar-footer {
+  padding: 0.75rem;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.sidebar-footer .sidebar-logout-btn:hover {
+  background: var(--danger) !important;
+  color: var(--white) !important;
+}
+
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.5rem 0.6rem 0.85rem;
+}
+.sidebar-user .avatar-sm {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: var(--green);
+  color: var(--white);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700;
+  font-size: 0.82rem;
+  flex-shrink: 0;
+}
+.sidebar-user .sidebar-user-info { overflow: hidden; white-space: nowrap; }
+.sidebar-user .sidebar-user-info .name {
+  color: var(--text-on-navy);
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+.sidebar-user .sidebar-user-info .role {
+  color: var(--text-on-navy-muted);
+  font-size: 0.75rem;
+}
+
+.sidebar-logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius);
+  border: none;
+  background: rgba(255,255,255,0.06);
+  color: var(--text-on-navy);
+  font-weight: 500;
+  font-size: 0.92rem;
+  font-family: var(--font-sans);
+  text-align: left;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.sidebar-logout-btn:hover { background: var(--danger); color: var(--white); }
+.sidebar-logout-btn i { font-size: 1.15rem; width: 22px; text-align: center; flex-shrink: 0; }
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 25, 33, 0.45);
+  z-index: 1025;
+}
+.sidebar-overlay.show { display: block; }
+
+/* ==========================================================================
+   Layout principal
+   ========================================================================== */
+
+.app-main {
+  margin-left: var(--sidebar-w);
+  transition: margin-left 0.2s ease;
+  min-height: 100vh;
+}
+.app-main.full { margin-left: 0; }
+
+.topbar {
+  height: var(--topbar-h);
+  background: var(--navy);
+  border-bottom: 1px solid var(--navy-darker);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+}
+.topbar h1 {
+  font-size: 1.1rem;
+  margin: 0;
+  color: var(--text-on-navy);
+}
+
+.topbar-user {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+}
+.topbar-user .avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--green);
+  color: var(--white);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.topbar-user .user-name { font-size: 0.85rem; font-weight: 600; color: var(--text-on-navy); }
+.topbar-user .role-badge {
+  font-size: 0.72rem;
+  color: var(--text-on-navy-muted);
+}
+
+.page-content { padding: 1.75rem; }
+
+/* ==========================================================================
+   Cartes métriques du tableau de bord — accent latéral coloré plutôt que
+   l'ombre uniforme générique.
+   ========================================================================== */
+
+.metric-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.1rem 1.25rem;
+  box-shadow: var(--shadow-card);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+.metric-icon {
+  width: 48px; height: 48px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+.metric-icon.bg-navy { background: #E7EDF0; color: var(--navy); }
+.metric-icon.bg-green { background: var(--green-light); color: var(--green-dark); }
+.metric-icon.bg-warning { background: var(--warning-light); color: var(--warning); }
+.metric-icon.bg-danger { background: var(--danger-light); color: var(--danger); }
+
+.metric-card .metric-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-top: 0.15rem;
+}
+.metric-card .metric-value {
+  font-family: var(--font-heading);
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: var(--navy-darker);
+  line-height: 1.2;
+}
+.metric-card .metric-sub {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
+}
+
+.panel {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.4rem;
+  box-shadow: var(--shadow-card);
+}
+.panel-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--navy-darker);
+  margin-bottom: 1rem;
+}
+
+.alert-tiba-warning {
+  background: var(--warning-light);
+  border: 1px solid #EED9A8;
+  color: #7A5A08;
+  border-radius: var(--radius);
+  padding: 0.85rem 1.1rem;
+  font-size: 0.88rem;
+}
+
+/* ==========================================================================
+   Saisie rapide de transaction — onglets larges (service / mouvement),
+   champs comptoir, panneau de calcul des frais en direct.
+   ========================================================================== */
+
+.pill-group { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.pill-btn {
+  flex: 1 1 0;
+  min-width: 100px;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--border-strong);
+  background: var(--white);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-align: center;
+  transition: all 0.15s ease;
+}
+.pill-btn:hover { border-color: var(--navy); }
+.pill-btn.active {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: var(--white);
+}
+.pill-btn.active.pill-green { background: var(--green); border-color: var(--green); }
+
+.counter-input {
+  font-size: 1.7rem;
+  font-weight: 700;
+  font-family: var(--font-heading);
+  padding: 0.7rem 1rem;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--border-strong);
+  width: 100%;
+}
+.counter-input:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(124, 179, 66, 0.18);
+  outline: none;
+}
+
+.fee-preview {
+  border-radius: var(--radius-lg);
+  border: 1.5px dashed var(--border-strong);
+  padding: 1.1rem 1.3rem;
+  background: var(--bg);
+  min-height: 84px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.fee-preview.state-ok { border-style: solid; border-color: var(--green); background: var(--green-light); }
+.fee-preview.state-error { border-style: solid; border-color: var(--danger); background: var(--danger-light); }
+.fee-preview .fee-amount { font-family: var(--font-heading); font-size: 1.4rem; font-weight: 700; color: var(--navy-darker); }
+.fee-preview .fee-label { font-size: 0.8rem; color: var(--text-muted); }
+.fee-preview .fee-error { font-size: 0.9rem; color: var(--danger); font-weight: 500; }
+.fee-preview .fee-placeholder { font-size: 0.88rem; color: var(--text-muted); }
+
+/* ==========================================================================
+   Page de connexion — panneau navy à gauche (identité), formulaire épuré
+   à droite. Sur mobile, le panneau navy devient un simple bandeau.
+   ========================================================================== */
+
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(124,179,66,0.10) 0, transparent 45%),
+    radial-gradient(circle at 85% 80%, rgba(124,179,66,0.08) 0, transparent 40%),
+    linear-gradient(135deg, var(--navy-darker), var(--navy) 60%, var(--navy-dark));
+}
+
+.login-card {
+  width: 100%;
+  max-width: 860px;
+  min-height: 500px;
+  background: var(--white);
+  border-radius: 22px;
+  box-shadow: 0 20px 50px rgba(10, 20, 28, 0.35);
+  display: flex;
+  overflow: hidden;
+}
+
+.login-brand {
+  flex: 0 0 42%;
+  background: var(--navy);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 2rem;
+  position: relative;
+  overflow: hidden;
+}
+.login-brand img { width: 150px; margin-bottom: 1.5rem; position: relative; z-index: 1; }
+.login-brand h2 {
+  color: var(--white);
+  font-size: 1.25rem;
+  text-align: center;
+  margin-bottom: 0.5rem;
+  position: relative; z-index: 1;
+}
+.login-brand p {
+  color: var(--text-on-navy-muted);
+  text-align: center;
+  max-width: 280px;
+  font-size: 0.88rem;
+  position: relative; z-index: 1;
+}
+.login-brand::before, .login-brand::after {
+  content: "";
+  position: absolute;
+  border: 10px solid var(--green);
+  border-radius: 50%;
+  opacity: 0.15;
+}
+.login-brand::before { width: 280px; height: 280px; top: -100px; right: -120px; }
+.login-brand::after { width: 180px; height: 180px; bottom: -80px; left: -70px; }
+
+.login-form-side {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--white);
+  padding: 2.5rem 2.5rem;
+}
+.login-form-wrap { width: 100%; max-width: 340px; }
+.login-form-wrap h1 { font-family: var(--font-heading); font-size: 1.5rem; margin-bottom: 0.25rem; }
+.login-form-wrap .subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.75rem; }
+
+.form-label { font-weight: 600; font-size: 0.85rem; color: var(--navy-darker); }
+.form-control {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 0.65rem 0.85rem;
+  font-size: 0.95rem;
+}
+.form-control:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(124, 179, 66, 0.18);
+}
+
+.password-field { position: relative; }
+.password-field .form-control { padding-right: 2.6rem; }
+.password-toggle {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  padding: 0.2rem;
+  line-height: 1;
+}
+.password-toggle:hover { color: var(--navy); }
+
+@media (max-width: 720px) {
+  .login-page { padding: 1.25rem 0.75rem; }
+  .login-card { flex-direction: column; min-height: 0; border-radius: 18px; }
+  .login-brand { flex: none; padding: 1.75rem 1.5rem; }
+  .login-brand img { width: 100px; margin-bottom: 0.6rem; }
+  .login-brand p { display: none; }
+  .login-form-side { padding: 2rem 1.5rem; }
+}
+
+@media (max-width: 900px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.mobile-open { transform: translateX(0); }
+  .app-main, .app-main.full { margin-left: 0; }
+}
+
+/* ==========================================================================
+   Module Transactions — panneau de saisie rapide + liste filtrable
+   ========================================================================== */
+
+.quick-entry-panel {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.4rem;
+  box-shadow: var(--shadow-card);
+  margin-bottom: 1.5rem;
+}
+.quick-entry-title {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--navy-darker);
+  margin-bottom: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.service-btn-group {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.1rem;
+}
+.service-btn {
+  flex: 1 1 140px;
+  border: 1.5px solid var(--border-strong);
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 0.7rem 1rem;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.12s ease;
+}
+.service-btn:hover { border-color: var(--navy); }
+.service-btn.active {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: var(--white);
+}
+
+.movement-btn-group {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.movement-btn {
+  border: 1.5px solid var(--border-strong);
+  background: var(--white);
+  border-radius: 999px;
+  padding: 0.4rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.movement-btn.active {
+  background: var(--green-light);
+  border-color: var(--green);
+  color: var(--green-dark);
+}
+
+.fee-summary-card {
+  background: var(--bg);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  padding: 0.9rem 1.1rem;
+  font-size: 0.92rem;
+  min-height: 56px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.field-hint { font-size: 0.78rem; color: var(--text-muted); min-height: 1.1rem; margin-top: 0.25rem; }
+
+.filter-bar {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 0.9rem 1.1rem;
+  margin-bottom: 1.25rem;
+}
+.filter-bar select, .filter-bar input {
+  font-size: 0.85rem;
+}
+/* les boutons Filtrer/Réinitialiser passent en pleine
+   largeur avant de s'écraser (au lieu de rétrécir leur texte). */
+.filter-bar .col-12.col-md-2 {
+  flex: 0 0 100%;
+  max-width: 100%;
+}
+@media (min-width: 992px) {
+  .filter-bar .col-12.col-md-2 {
+    flex: 0 0 auto;
+    max-width: none;
+    width: 16.6667%;
+  }
+}
+
+.badge-service {
+  color: var(--navy);
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: capitalize;
+}
+.status-validee { color: var(--green-dark); font-weight: 600; font-size: 0.82rem; }
+.status-annulee { color: var(--danger); font-weight: 600; font-size: 0.82rem; }
+
+.app-toast-container {
+  top: calc(var(--topbar-h) + 14px);
+}
+
+.app-toast {
+  min-width: 280px;
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(22,41,54,0.18);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+.app-toast-success { background: var(--green); color: var(--white); }
+.app-toast-error { background: var(--danger); color: var(--white); }
+.app-toast-warning { background: var(--warning-light); color: #7A5A08; border: 1px solid #EED9A8 !important; }
+
+.table-tiba thead th {
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.6rem;
+}
+.table-tiba td { font-size: 0.88rem; vertical-align: middle; }
+
+/* Empêche les boutons d'action (Modifier/Annuler/etc.) de s'écraser dans
+   la dernière colonne d'un tableau sur petit écran */
+.table-tiba td:last-child { white-space: nowrap; }
+.table-tiba td:last-child .d-flex { flex-wrap: nowrap; }
