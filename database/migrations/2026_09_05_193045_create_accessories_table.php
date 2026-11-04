@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('accessories', function (Blueprint $table) {
             $table->id();
-            $table->string('name', 120);
+            $table->string('name', 120)->unique(); // pas deux produits du même nom (RG)
             $table->text('description')->nullable();
             $table->decimal('unit_price', 10, 2);
             $table->integer('stock_quantity')->default(0);
@@ -20,7 +20,6 @@ return new class extends Migration
             $table->timestamps();
 
             // Index pour les recherches
-            $table->index('name');
             $table->index('status');
             $table->index('stock_quantity');
         });

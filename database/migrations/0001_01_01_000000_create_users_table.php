@@ -19,8 +19,7 @@ return new class extends Migration
             $table->rememberToken();
             $table->timestamps();
 
-            // Index pour les performances
-            $table->index('username');
+            // (username est déjà indexé par unique())
             $table->index('role');
             $table->index('status');
         });

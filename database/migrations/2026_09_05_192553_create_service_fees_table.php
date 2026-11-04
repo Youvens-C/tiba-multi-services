@@ -20,8 +20,6 @@ return new class extends Migration
 
             // Index pour les recherches rapides
             $table->index(['service', 'movement_type', 'status']);
-            $table->index('min_amount');
-            $table->index('max_amount');
         });
     }
 

@@ -24,7 +24,6 @@ return new class extends Migration
             $table->index('debtor_name');
             $table->index('status');
             $table->index('currency');
-            $table->index('created_by');
         });
     }
 

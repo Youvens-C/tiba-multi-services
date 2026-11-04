@@ -15,13 +15,14 @@ return new class extends Migration
             $table->decimal('opening_balance', 10, 2)->default(0);
             $table->foreignId('entered_by')->constrained('users')->onDelete('restrict');
             $table->timestamp('created_at');
+            // Le solde reste modifiable 5 min après sa saisie (voir DailyOpeningBalance)
+            $table->timestamp('updated_at')->nullable();
 
             // Contrainte unique : un seul solde par service et par jour
             $table->unique(['service', 'balance_date']);
 
             // Index pour les recherches
             $table->index('balance_date');
-            $table->index('service');
         });
     }
 

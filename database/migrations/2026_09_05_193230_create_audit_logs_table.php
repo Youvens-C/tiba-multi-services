@@ -21,11 +21,14 @@ return new class extends Migration
             // transaction, dette, paiement, produit, utilisateur
 
             $table->unsignedBigInteger('entity_id');
+            // Identification lisible de l'élément, figée au moment de l'action
+            $table->string('entity_label', 255)->nullable();
             $table->text('details')->nullable();
+            // Valeurs avant → après : {"amount": {"old": 15000, "new": 12000}}
+            $table->json('changes')->nullable();
             $table->timestamp('created_at');
 
             // Index pour les recherches
-            $table->index('user_id');
             $table->index('action_type');
             $table->index('entity_type');
             $table->index('created_at');

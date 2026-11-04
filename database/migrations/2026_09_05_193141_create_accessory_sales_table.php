@@ -15,11 +15,16 @@ return new class extends Migration
             $table->decimal('unit_price', 10, 2);
             $table->decimal('total_amount', 10, 2);
             $table->foreignId('sold_by')->constrained('users')->onDelete('restrict');
+            // Annulation par le directeur : la vente reste en base (jamais de suppression)
+            $table->enum('status', ['validee', 'annulee'])->default('validee');
+            $table->foreignId('cancelled_by')->nullable()->constrained('users')->onDelete('restrict');
+            $table->timestamp('cancelled_at')->nullable();
             $table->timestamp('created_at');
+            $table->timestamp('updated_at')->nullable(); // correction de quantité
 
             // Index
-            $table->index('accessory_id');
-            $table->index('sold_by');
+            // accessory_id / sold_by / cancelled_by : index créés par les clés étrangères
+            $table->index('status');
             $table->index('created_at');
         });
     }

@@ -16,8 +16,7 @@ return new class extends Migration
             $table->enum('status', ['actif', 'inactif'])->default('actif');
             $table->timestamps();
 
-            // Index pour la recherche
-            $table->index('prefix');
+            // (prefix est déjà indexé par unique())
             $table->index('service');
             $table->index('operator');
         });

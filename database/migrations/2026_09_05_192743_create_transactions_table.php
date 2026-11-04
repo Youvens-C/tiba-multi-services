@@ -11,7 +11,13 @@ return new class extends Migration
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
             $table->enum('service', ['moncash', 'natcash', 'zelle']);
-            $table->enum('movement_type', ['retrait', 'transfert', 'depot']);
+            // Les 5 derniers types sont sans frais (CDC RG21) : pap_padap (Moncash), lapoula (Natcash),
+            // dépôts Paryaj Pam / Paryaj Lakay / Lotto Mobile
+            $table->enum('movement_type', [
+                'retrait', 'transfert', 'depot',
+                'pap_padap', 'lapoula',
+                'depot_paryaj_pam', 'depot_paryaj_lakay', 'depot_lotto_mobile',
+            ]);
             $table->string('client_phone', 20);
             $table->decimal('amount', 10, 2);
             $table->decimal('fee_client', 10, 2);
@@ -34,10 +40,8 @@ return new class extends Migration
             // Index pour les performances
             $table->index('created_at');
             $table->index(['service', 'status']);
-            $table->index('created_by');
-            $table->index('currency');
+            // created_by / last_updated_by / cancelled_by : index créés par les clés étrangères
             $table->index('client_phone');
-            $table->index('movement_type');
         });
     }
 

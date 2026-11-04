@@ -21,8 +21,6 @@ return new class extends Migration
             $table->timestamp('created_at');
 
             // Index
-            $table->index('debt_id');
-            $table->index('created_by');
             $table->index('status');
             $table->index('created_at');
         });
