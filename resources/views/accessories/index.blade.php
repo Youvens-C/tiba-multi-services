@@ -23,7 +23,7 @@
                             <option value="" disabled selected>Choisir un produit</option>
                             @foreach($sellableAccessories as $a)
                                 <option value="{{ $a->id }}" data-price="{{ $a->unit_price }}" data-stock="{{ $a->stock_quantity }}">
-                                    {{ $a->name }} — {{ number_format($a->unit_price, 2) }} HTG
+                                    {{ $a->name }}
                                 </option>
                             @endforeach
                         </select>
@@ -67,19 +67,26 @@
                             <th>Prix unitaire</th>
                             <th>Total</th>
                             <th>Vendu par</th>
+                            <th>Statut</th>
                             <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($recentSales as $sale)
-                            <tr>
+                            <tr class="{{ $sale->is_cancelled ? 'text-decoration-line-through text-muted' : '' }}">
                                 <td class="text-muted">{{ $sale->created_at->format('H:i') }}</td>
                                 <td class="fw-semibold">{{ $sale->accessory->name ?? '—' }}</td>
                                 <td>{{ $sale->quantity }}</td>
                                 <td>{{ number_format($sale->unit_price, 2) }} HTG</td>
                                 <td class="fw-semibold">{{ number_format($sale->total_amount, 2) }} HTG</td>
                                 <td class="text-muted">{{ $sale->seller->name ?? '—' }}</td>
+                                <td>
+                                    <span class="status-{{ $sale->is_cancelled ? 'annulee' : 'validee' }}" style="text-decoration:none;display:inline-block;">
+                                        {{ $sale->is_cancelled ? 'Annulée' : 'Validée' }}
+                                    </span>
+                                </td>
                                 <td class="text-end">
+                                  <div class="d-flex gap-2 justify-content-end">
                                     @if($sale->canBeModifiedBy(auth()->user()))
                                         <button type="button" class="btn-tiba-secondary js-edit-sale" style="padding:0.3rem 0.7rem;font-size:0.8rem;"
                                                 data-url="{{ route('accessory-sales.update', $sale) }}"
@@ -89,6 +96,15 @@
                                             <i class="bi bi-pencil"></i>
                                         </button>
                                     @endif
+                                    @if($sale->canBeCancelledBy(auth()->user()))
+                                        <form method="POST" action="{{ route('accessory-sales.cancel', $sale) }}" class="js-confirm-cancel-sale">
+                                            @csrf
+                                            <button type="submit" class="btn-tiba-danger" style="padding:0.3rem 0.7rem;font-size:0.8rem;" title="Annuler la vente">
+                                                <i class="bi bi-x-circle"></i>
+                                            </button>
+                                        </form>
+                                    @endif
+                                  </div>
                                 </td>
                             </tr>
                         @endforeach

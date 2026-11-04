@@ -24,18 +24,57 @@ const NO_FEE_MOVEMENTS = ['pap_padap', 'lapoula', 'depot_paryaj_pam', 'depot_par
 const NO_FEE_MIN_AMOUNTS = { pap_padap: 10, lapoula: 5, depot_paryaj_pam: 50, depot_paryaj_lakay: 50, depot_lotto_mobile: 50 };
 const MAX_AMOUNTS = { moncash: 74999, natcash: 99999 };
 
-function corePhoneDigits(rawPhone, service) {
-    let digits = rawPhone.replace(/\D/g, '');
-    if (service === 'zelle') {
-        if (digits.length === 11 && digits.startsWith('1')) digits = digits.slice(1);
-    } else {
-        if (digits.length >= 10 && digits.startsWith('509')) digits = digits.slice(3);
+/**
+ * Analyse d'un numéro saisi (miroir de App\Support\PhoneNumber côté serveur).
+ *  - 8 chiffres (ou 509 + 8)  → Haïti  (Moncash / Natcash)
+ *  - 10 chiffres (ou 1 + 10)  → États-Unis (Zelle)
+ * Retourne { ok, kind: 'haiti' | 'us' | null, core, error }.
+ */
+function analysePhone(raw) {
+    const fail = (error) => ({ ok: false, kind: null, core: null, error });
+    raw = (raw || '').trim();
+
+    if (raw === '') return fail('Le numéro de téléphone est obligatoire.');
+
+    // Chiffres, espaces, points, tirets, parenthèses ; « + » seulement au début ;
+    // jamais de tiret ou de point en première position.
+    if (!/^\+?\(?\d[\d\s().\-]*$/.test(raw)) {
+        if (/^[-.]/.test(raw)) return fail('Un numéro ne peut pas commencer par un tiret ou un point.');
+        return fail('Numéro invalide : chiffres uniquement (espaces, tirets, points et parenthèses tolérés).');
     }
-    return digits;
+
+    const digits = raw.replace(/\D/g, '');
+
+    if (digits.length === 8) return { ok: true, kind: 'haiti', core: digits, error: null };
+    if (digits.length === 11 && digits.startsWith('509')) return { ok: true, kind: 'haiti', core: digits.slice(3), error: null };
+
+    let us = null;
+    if (digits.length === 10) us = digits;
+    else if (digits.length === 11 && digits.startsWith('1')) us = digits.slice(1);
+
+    if (us !== null) {
+        // Plan nord-américain : indicatif régional et central ne commencent ni par 0 ni par 1.
+        if (!/^[2-9]\d{2}[2-9]\d{6}$/.test(us)) {
+            return fail("Numéro américain invalide : l'indicatif régional et les 3 chiffres suivants ne commencent ni par 0 ni par 1.");
+        }
+        return { ok: true, kind: 'us', core: us, error: null };
+    }
+
+    return fail('Numéro invalide : 8 chiffres pour Moncash / Natcash, 10 chiffres pour Zelle.');
 }
 
-function expectedPhoneLength(service) {
-    return service === 'zelle' ? 10 : 8;
+/** Valide un numéro pour un service donné (miroir de PhoneNumber::forService). */
+function phoneForService(raw, service) {
+    const r = analysePhone(raw);
+    if (!r.ok) return r;
+    if (service === 'zelle' && r.kind !== 'us') {
+        return { ok: false, kind: null, core: null, error: 'Le numéro Zelle doit comporter 10 chiffres (hors indicatif +1).' };
+    }
+    if (service !== 'zelle' && r.kind !== 'haiti') {
+        const name = service ? service.charAt(0).toUpperCase() + service.slice(1) : 'ce service';
+        return { ok: false, kind: null, core: null, error: `Un numéro à 10 chiffres correspond à Zelle. Pour ${name}, saisissez 8 chiffres (hors indicatif +509).` };
+    }
+    return r;
 }
 
 /**
@@ -147,8 +186,10 @@ function initTransactionForm(config) {
         recalculate();
     }
 
+    // Préfixe opérateur (2 premiers chiffres) d'un numéro haïtien, même incomplet.
     function detectPrefix(rawPhone) {
-        const digits = corePhoneDigits(rawPhone, 'moncash');
+        let digits = rawPhone.replace(/\D/g, '');
+        if (digits.length > 8 && digits.startsWith('509')) digits = digits.slice(3);
         const prefix = digits.slice(0, 2);
         return operatorPrefixes.find(p => p.prefix === prefix) || null;
     }
@@ -164,18 +205,25 @@ function initTransactionForm(config) {
         }
 
         if (phoneInput.value) {
-            const core = corePhoneDigits(phoneInput.value, currentService);
-            const expected = expectedPhoneLength(currentService);
-            if (core.length !== expected) {
-                phoneHint.textContent = `Le numéro doit comporter ${expected} chiffres (hors indicatif).`;
+            const phone = phoneForService(phoneInput.value, currentService);
+            let problem = phone.ok ? null : phone.error;
+
+            // Numéro haïtien complet : le préfixe doit être celui du service choisi.
+            if (phone.ok && currentService !== 'zelle') {
+                const match = operatorPrefixes.find(p => p.prefix === phone.core.slice(0, 2));
+                if (!match) problem = 'Préfixe non reconnu.';
+                else if (match.service !== currentService) problem = `Ce numéro est un numéro ${match.service}, pas ${currentService}.`;
+            }
+
+            if (problem) {
+                phoneHint.textContent = problem;
                 phoneHint.classList.add('text-danger');
                 submitBtn.disabled = true;
                 feeSummary.innerHTML = '<span class="text-muted">Corrigez le numéro pour continuer.</span>';
                 return;
-            } else {
-                phoneHint.classList.remove('text-danger');
-                if (currentService !== 'zelle') phoneHint.textContent = 'Préfixe reconnu.';
             }
+            phoneHint.classList.remove('text-danger');
+            phoneHint.textContent = currentService === 'zelle' ? 'Numéro américain valide.' : 'Préfixe reconnu.';
         }
 
         if (!amount || amount <= 0) {
@@ -193,9 +241,19 @@ function initTransactionForm(config) {
     serviceButtons.forEach(btn => btn.addEventListener('click', () => setService(btn.dataset.service)));
 
     phoneInput.addEventListener('input', () => {
-        if (currentService !== 'zelle') {
+        const phone = analysePhone(phoneInput.value);
+
+        if (phone.ok && phone.kind === 'us') {
+            // 10 chiffres (ou 1 + 10) : c'est un numéro Zelle.
+            if (currentService !== 'zelle') setService('zelle', { fromDetection: true });
+        } else if (phone.ok && phone.kind === 'haiti') {
+            // Numéro haïtien complet : le préfixe désigne Moncash ou Natcash.
             const match = detectPrefix(phoneInput.value);
-            if (match && match.service !== currentService) {
+            if (match && match.service !== currentService) setService(match.service, { fromDetection: true });
+        } else if (currentService !== 'zelle') {
+            // Numéro en cours de saisie : on suit le préfixe dès 2 chiffres.
+            const match = detectPrefix(phoneInput.value);
+            if (match && match.service !== currentService && phoneInput.value.replace(/\D/g, '').length < 8) {
                 setService(match.service, { fromDetection: true });
             }
         }
@@ -237,10 +295,9 @@ function initEditTransactionModal(config) {
         const amount = parseFloat(amountInput.value);
         let ok = true;
 
-        const core = corePhoneDigits(phoneInput.value, service);
-        const expected = expectedPhoneLength(service);
-        if (phoneInput.value && core.length !== expected) {
-            feeSummary.innerHTML = `<span class="text-danger fw-semibold">Le numéro doit comporter ${expected} chiffres (hors indicatif).</span>`;
+        const phone = phoneForService(phoneInput.value, service);
+        if (!phone.ok) {
+            feeSummary.innerHTML = `<span class="text-danger fw-semibold">${phone.error}</span>`;
             ok = false;
         } else if (!amount || amount <= 0) {
             feeSummary.innerHTML = '<span class="text-muted">Saisissez un montant.</span>';

@@ -63,6 +63,7 @@ Route::middleware(['auth', 'active', 'nocache'])->group(function () {
     // ============================================
     Route::get('/accessories/catalog', [AccessoryController::class, 'catalog'])->name('accessories.catalog');
     Route::put('/accessory-sales/{sale}', [AccessoryController::class, 'updateSale'])->name('accessory-sales.update');
+    Route::post('/accessory-sales/{sale}/cancel', [AccessoryController::class, 'cancelSale'])->name('accessory-sales.cancel');
 
     Route::resource('accessories', AccessoryController::class)->only(['index', 'store', 'update']);
     Route::post('/accessories/{accessory}/toggle', [AccessoryController::class, 'toggle'])->name('accessories.toggle');

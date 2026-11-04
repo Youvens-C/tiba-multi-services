@@ -47,6 +47,20 @@ document.addEventListener('DOMContentLoaded', function () {
         sellQuantity.addEventListener('input', recalcSale);
     }
 
+    // ── Catalogue : onglets Actifs / Désactivés (mémorisés pour la session) ──
+    const catTabs = document.querySelectorAll('.cat-tab');
+    function showCatTab(paneId) {
+        catTabs.forEach(t => t.classList.toggle('active', t.dataset.pane === paneId));
+        document.querySelectorAll('.cat-pane').forEach(p => p.classList.toggle('active', p.id === paneId));
+        try { sessionStorage.setItem('catTab', paneId); } catch (e) { /* stockage indisponible : sans importance */ }
+    }
+    if (catTabs.length) {
+        let saved = null;
+        try { saved = sessionStorage.getItem('catTab'); } catch (e) { /* idem */ }
+        if (saved && document.getElementById(saved)) showCatTab(saved);
+        catTabs.forEach(tab => tab.addEventListener('click', () => showCatTab(tab.dataset.pane)));
+    }
+
     // ── Modale Modifier produit : pré-remplissage ─────────────────────────
     document.querySelectorAll('.js-edit-product').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -120,4 +134,18 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
     qty.addEventListener('input', recalc);
+});
+
+// ── Confirmation avant annulation d'une vente (directeur) ─────────────
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.js-confirm-cancel-sale').forEach(form => {
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            confirmAction(form, {
+                title: 'Annuler cette vente ?',
+                message: "La vente restera visible dans l'historique mais ne sera plus comptée. La quantité vendue sera remise en stock. Cette action est irréversible.",
+                confirmLabel: 'Oui, annuler la vente',
+            });
+        });
+    });
 });

@@ -69,7 +69,7 @@ class ReportController extends Controller
         $profitHtg = $valid->where('currency', 'HTG')->sum('fee_net');
         $profitUsd = $valid->where('currency', 'USD')->sum('fee_net');
 
-        $sales = AccessorySale::with(['accessory:id,name', 'seller:id,name'])
+        $sales = AccessorySale::valid()->with(['accessory:id,name', 'seller:id,name'])
             ->whereBetween('created_at', [$start, $end])
             ->orderBy('created_at')
             ->get();
@@ -242,7 +242,8 @@ class ReportController extends Controller
 
         $start = Carbon::parse($data['from'])->startOfDay();
         $end = Carbon::parse($data['to'])->endOfDay();
-        $range = fn ($q) => $q->whereBetween('created_at', [$start, $end]);
+        // Les ventes annulées ne comptent pas dans les quantités ni les montants.
+        $range = fn ($q) => $q->where('status', 'validee')->whereBetween('created_at', [$start, $end]);
 
         $accessories = Accessory::withSum(['sales as sold_qty' => $range], 'quantity')
             ->withSum(['sales as sold_amount' => $range], 'total_amount')
@@ -250,7 +251,7 @@ class ReportController extends Controller
             ->get();
 
         // Vendeur(s) par article sur la période (noms séparés par une virgule).
-        $sellers = AccessorySale::with('seller:id,name')
+        $sellers = AccessorySale::valid()->with('seller:id,name')
             ->whereBetween('created_at', [$start, $end])
             ->get()
             ->groupBy('accessory_id')

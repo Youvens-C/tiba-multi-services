@@ -44,13 +44,13 @@ class OperatorPrefix extends Model
 
     public static function detectService(string $phoneNumber): ?array
     {
-        // Ne garder que les chiffres, puis retirer l'indicatif pays (509)
-        // si le numéro a été saisi avec (ex. "+509 3712-3456").
-        $cleaned = preg_replace('/\D/', '', $phoneNumber);
-        if (strlen($cleaned) >= 10 && str_starts_with($cleaned, '509')) {
-            $cleaned = substr($cleaned, 3);
+        // Accepte un numéro brut (« +509 3712-3456 ») ou déjà normalisé (8 chiffres).
+        // Un numéro qui n'est pas un numéro haïtien valide n'a pas de préfixe.
+        $phone = \App\Support\PhoneNumber::analyse($phoneNumber);
+        if (!$phone['ok'] || $phone['kind'] !== \App\Support\PhoneNumber::KIND_HAITI) {
+            return null;
         }
-        $prefix = substr($cleaned, 0, 2);
+        $prefix = substr($phone['core'], 0, 2);
 
         $prefixData = self::where('prefix', $prefix)
             ->where('status', 'actif')

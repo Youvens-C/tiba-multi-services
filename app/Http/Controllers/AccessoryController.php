@@ -98,6 +98,42 @@ class AccessoryController extends Controller
         }
     }
 
+    /** Annulation d'une vente (directeur uniquement) : la vente est conservée, le stock restitué. */
+    public function cancelSale(AccessorySale $sale)
+    {
+        if (!$sale->canBeCancelledBy(auth()->user())) {
+            if (auth()->user()->role !== 'directeur') {
+                abort(403, 'Seul le directeur peut annuler une vente.');
+            }
+
+            return back()->with('error', 'Cette vente est déjà annulée.');
+        }
+
+        $accessory = $sale->accessory;
+        $stockBefore = $accessory->stock_quantity;
+        $statusBefore = $sale->status;
+
+        try {
+            $sale->cancel(auth()->user());
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        AuditLog::log(
+            auth()->id(),
+            'annulation_vente_accessoire',
+            'produit',
+            $accessory->id,
+            "Vente n°{$sale->id} du " . $sale->created_at->format('d/m/Y \à H:i') . " annulée : {$sale->quantity}x {$accessory->name} ({$sale->total_amount} HTG)",
+            array_merge(
+                AuditLog::diff(['status' => $statusBefore], ['status' => $sale->status]),
+                AuditLog::diff(['stock_quantity' => $stockBefore], ['stock_quantity' => $accessory->fresh()->stock_quantity])
+            )
+        );
+
+        return redirect()->route('accessories.index')->with('success', 'Vente annulée, le stock a été restitué.');
+    }
+
     // ── Page "Catalogue" : gestion des produits (directeur uniquement) ──────
 
     public function catalog()
@@ -106,9 +142,11 @@ class AccessoryController extends Controller
             abort(403, 'Accès réservé au directeur.');
         }
 
-        $accessories = Accessory::with('creator')->orderBy('name')->get();
+        // Deux listes : les produits actifs (vendables) et les produits désactivés (archives).
+        $activeProducts = Accessory::where('status', 'actif')->orderBy('name')->get();
+        $inactiveProducts = Accessory::where('status', 'inactif')->orderBy('name')->get();
 
-        return view('accessories.catalog', compact('accessories'));
+        return view('accessories.catalog', compact('activeProducts', 'inactiveProducts'));
     }
 
     public function store(Request $request)
@@ -117,12 +155,16 @@ class AccessoryController extends Controller
             abort(403, 'Seul le directeur peut créer des produits.');
         }
 
+        $this->normalizeName($request);
+
         $request->validate([
-            'name' => 'required|string|max:120',
+            'name' => ['required', 'string', 'max:120', $this->uniqueNameRule()],
             'description' => 'nullable|string',
-            'unit_price' => 'required|numeric|min:0',
+            'unit_price' => 'required|numeric|min:0.01',
             'stock_quantity' => 'required|integer|min:0',
             'low_stock_threshold' => 'required|integer|min:1',
+        ], [
+            'unit_price.min' => 'Le prix doit être supérieur à 0 HTG.',
         ]);
 
         $accessory = Accessory::create([
@@ -146,11 +188,15 @@ class AccessoryController extends Controller
             abort(403, 'Seul le directeur peut modifier les produits.');
         }
 
+        $this->normalizeName($request);
+
         $request->validate([
-            'name' => 'required|string|max:120',
+            'name' => ['required', 'string', 'max:120', $this->uniqueNameRule($accessory->id)],
             'description' => 'nullable|string',
-            'unit_price' => 'required|numeric|min:0',
+            'unit_price' => 'required|numeric|min:0.01',
             'low_stock_threshold' => 'required|integer|min:1',
+        ], [
+            'unit_price.min' => 'Le prix doit être supérieur à 0 HTG.',
         ]);
 
         $fields = ['name', 'description', 'unit_price', 'low_stock_threshold'];
@@ -224,5 +270,34 @@ class AccessoryController extends Controller
             AuditLog::diff(['stock_quantity' => $oldStock], ['stock_quantity' => $accessory->fresh()->stock_quantity]));
 
         return redirect()->route('accessories.catalog')->with('success', "Stock ajusté avec succès. Nouveau stock: {$accessory->stock_quantity}");
+    }
+
+    // ── Outils de validation des produits ───────────────────────────────────
+
+    /** Supprime les espaces en trop : « Casque   AKG  » devient « Casque AKG ». */
+    private function normalizeName(Request $request): void
+    {
+        $request->merge(['name' => preg_replace('/\s+/u', ' ', trim((string) $request->input('name')))]);
+    }
+
+    /**
+     * Interdit deux produits de même nom (majuscules/minuscules ignorées),
+     * y compris face à un produit désactivé.
+     */
+    private function uniqueNameRule(?int $ignoreId = null): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail) use ($ignoreId) {
+            $existing = Accessory::whereRaw('LOWER(name) = ?', [mb_strtolower((string) $value)])
+                ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))
+                ->first();
+
+            if (!$existing) {
+                return;
+            }
+
+            $fail($existing->status === 'actif'
+                ? "Un produit nommé « {$existing->name} » existe déjà."
+                : "Un produit nommé « {$existing->name} » existe déjà (désactivé). Réactivez-le depuis l'onglet « Désactivés ».");
+        };
     }
 }

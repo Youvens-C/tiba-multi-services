@@ -202,6 +202,7 @@ class AuditLog extends Model
         'creation_solde_ouverture'  => 'Saisie du solde d\'ouverture',
         'modification_solde_ouverture' => 'Modification du solde d\'ouverture',
         'modification_vente_accessoire' => 'Modification de vente',
+        'annulation_vente_accessoire' => 'Annulation de vente',
         'modification_produit'      => 'Modification de produit',
     ];
 

@@ -27,7 +27,7 @@ class DashboardController extends Controller
         $todayProfitNatcash = $todayTransactions->where('service', 'natcash')->sum('fee_net');
         $todayProfitUsd = $todayTransactions->where('service', 'zelle')->sum('fee_net');
 
-        $todayAccessorySales = AccessorySale::whereDate('created_at', today())->get();
+        $todayAccessorySales = AccessorySale::valid()->whereDate('created_at', today())->get();
         $todayAccessoryCount = $todayAccessorySales->count();
         $todayAccessoryRevenue = $todayAccessorySales->sum('total_amount');
 

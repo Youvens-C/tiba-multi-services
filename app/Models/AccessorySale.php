@@ -19,6 +19,9 @@ class AccessorySale extends Model
         'unit_price',
         'total_amount',
         'sold_by',
+        'status',
+        'cancelled_by',
+        'cancelled_at',
         'created_at',
     ];
 
@@ -27,6 +30,7 @@ class AccessorySale extends Model
         'total_amount' => 'decimal:2',
         'quantity' => 'integer',
         'created_at' => 'datetime',
+        'cancelled_at' => 'datetime',
     ];
 
     // ========== RELATIONS ==========
@@ -41,6 +45,18 @@ class AccessorySale extends Model
         return $this->belongsTo(User::class, 'sold_by');
     }
 
+    public function cancelledBy()
+    {
+        return $this->belongsTo(User::class, 'cancelled_by');
+    }
+
+    // ========== ACCESSORS ==========
+
+    public function getIsCancelledAttribute(): bool
+    {
+        return $this->status === 'annulee';
+    }
+
     // ========== BOOT ==========
 
     protected static function booted()
@@ -51,6 +67,12 @@ class AccessorySale extends Model
     }
 
     // ========== SCOPES ==========
+
+    /** Ventes non annulées : seules celles-ci comptent dans les totaux. */
+    public function scopeValid($query)
+    {
+        return $query->where('status', 'validee');
+    }
 
     public function scopeToday($query)
     {
@@ -117,8 +139,42 @@ class AccessorySale extends Model
         });
     }
 
+    /**
+     * Annule la vente et restitue la quantité au stock (même si le produit
+     * a été désactivé entre-temps).
+     */
+    public function cancel(User $user): void
+    {
+        DB::transaction(function () use ($user) {
+            $sale = self::whereKey($this->id)->lockForUpdate()->first();
+
+            if ($sale->status === 'annulee') {
+                throw new \Exception('Cette vente est déjà annulée.');
+            }
+
+            Accessory::where('id', $sale->accessory_id)->lockForUpdate()->first()
+                ->increment('stock_quantity', $sale->quantity);
+
+            $sale->status = 'annulee';
+            $sale->cancelled_by = $user->id;
+            $sale->cancelled_at = now();
+            $sale->save();
+
+            $this->setRawAttributes($sale->getAttributes(), true);
+        });
+    }
+
+    public function canBeCancelledBy(User $user): bool
+    {
+        return $user->role === 'directeur' && $this->status === 'validee';
+    }
+
     public function canBeModifiedBy(User $user): bool
     {
+        if ($this->status !== 'validee') {
+            return false;
+        }
+
         if ($user->role === 'directeur') {
             return true;
         }

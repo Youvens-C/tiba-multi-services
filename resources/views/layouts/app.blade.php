@@ -11,6 +11,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/responsive-tables.css') }}">
     @stack('styles')
 </head>
 <body>
@@ -116,6 +117,9 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     @include('partials.toasts')
+        <script src="{{ asset('js/responsive-tables.js') }}"></script>
+        <script src="{{ asset('js/custom-select.js') }}"></script>
+        <script src="{{ asset('js/live-refresh.js') }}"></script>
     <script>
         const sidebar = document.getElementById('sidebar');
         const appMain = document.getElementById('appMain');

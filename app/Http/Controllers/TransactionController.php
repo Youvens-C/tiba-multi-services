@@ -6,6 +6,7 @@ use App\Models\Transaction;
 use App\Models\ServiceFee;
 use App\Models\OperatorPrefix;
 use App\Models\AuditLog;
+use App\Support\PhoneNumber;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -88,26 +89,18 @@ class TransactionController extends Controller
         $user = auth()->user();
         $currency = $request->service === 'zelle' ? 'USD' : 'HTG';
 
-        // Longueur du numéro, indicatif ignoré s'il est présent (+509 ou +1).
-        $phoneDigits = preg_replace('/\D/', '', $request->client_phone);
-        if ($request->service === 'zelle') {
-            $core = (strlen($phoneDigits) === 11 && str_starts_with($phoneDigits, '1'))
-                ? substr($phoneDigits, 1) : $phoneDigits;
-            if (strlen($core) !== 10) {
-                return back()->withInput()->with('error', 'Le numéro Zelle doit comporter 10 chiffres (hors indicatif +1).');
-            }
-        } else {
-            $core = (strlen($phoneDigits) >= 10 && str_starts_with($phoneDigits, '509'))
-                ? substr($phoneDigits, 3) : $phoneDigits;
-            if (strlen($core) !== 8) {
-                return back()->withInput()->with('error', 'Le numéro doit comporter 8 chiffres (hors indicatif +509).');
-            }
+        // Format, longueur et cohérence avec le service (8 chiffres = Moncash/Natcash,
+        // 10 chiffres = Zelle). Le numéro est enregistré sans indicatif ni séparateurs.
+        $phone = PhoneNumber::forService($request->client_phone, $request->service);
+        if (!$phone['ok']) {
+            return back()->withInput()->with('error', $phone['error']);
         }
+        $phoneCore = $phone['core'];
 
         // Le contrôle de préfixe ne s'applique pas à Zelle (RG20 = Moncash/Natcash uniquement,
         // Zelle n'utilise pas les préfixes opérateurs haïtiens).
         if ($request->service !== 'zelle') {
-            $prefixData = OperatorPrefix::detectService($request->client_phone);
+            $prefixData = OperatorPrefix::detectService($phoneCore);
             if (!$prefixData) {
                 return back()->withInput()->with('error', 'Numéro de téléphone invalide ou préfixe non reconnu.');
             }
@@ -136,7 +129,7 @@ class TransactionController extends Controller
         $transaction = Transaction::create([
             'service' => $request->service,
             'movement_type' => $request->movement_type,
-            'client_phone' => $request->client_phone,
+            'client_phone' => $phoneCore,
             'amount' => $request->amount,
             'fee_client' => $feeClient,
             'fee_net' => $feeNet,
@@ -167,24 +160,14 @@ class TransactionController extends Controller
             'amount' => 'required|numeric|min:1',
         ]);
 
-        // Longueur du numéro, indicatif ignoré s'il est présent (+509 ou +1).
-        $phoneDigits = preg_replace('/\D/', '', $request->client_phone);
-        if ($transaction->service === 'zelle') {
-            $core = (strlen($phoneDigits) === 11 && str_starts_with($phoneDigits, '1'))
-                ? substr($phoneDigits, 1) : $phoneDigits;
-            if (strlen($core) !== 10) {
-                return back()->withInput()->with('error', 'Le numéro Zelle doit comporter 10 chiffres (hors indicatif +1).');
-            }
-        } else {
-            $core = (strlen($phoneDigits) >= 10 && str_starts_with($phoneDigits, '509'))
-                ? substr($phoneDigits, 3) : $phoneDigits;
-            if (strlen($core) !== 8) {
-                return back()->withInput()->with('error', 'Le numéro doit comporter 8 chiffres (hors indicatif +509).');
-            }
+        $phone = PhoneNumber::forService($request->client_phone, $transaction->service);
+        if (!$phone['ok']) {
+            return back()->withInput()->with('error', $phone['error']);
         }
+        $phoneCore = $phone['core'];
 
         if ($transaction->service !== 'zelle') {
-            $prefixData = OperatorPrefix::detectService($request->client_phone);
+            $prefixData = OperatorPrefix::detectService($phoneCore);
             if (!$prefixData || $prefixData['service'] !== $transaction->service) {
                 return back()->withInput()->with('error', 'Le numéro saisi ne correspond pas au service de cette transaction.');
             }
@@ -210,7 +193,7 @@ class TransactionController extends Controller
         $fields = ['client_phone', 'amount', 'fee_client', 'fee_net'];
         $before = $transaction->only($fields);
 
-        $transaction->client_phone = $request->client_phone;
+        $transaction->client_phone = $phoneCore;
         $transaction->amount = $request->amount;
         $transaction->fee_client = $feeClient;
         $transaction->fee_net = $feeNet;
