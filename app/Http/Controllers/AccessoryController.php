@@ -287,9 +287,14 @@ class AccessoryController extends Controller
     private function uniqueNameRule(?int $ignoreId = null): \Closure
     {
         return function (string $attribute, mixed $value, \Closure $fail) use ($ignoreId) {
-            $existing = Accessory::whereRaw('LOWER(name) = ?', [mb_strtolower((string) $value)])
+            // Comparaison faite en PHP (mb_strtolower) et non avec LOWER() en SQL :
+            // selon la base, LOWER() ignore les lettres accentuées (É, È…).
+            // Le catalogue est petit, le coût est négligeable.
+            $wanted = mb_strtolower((string) $value);
+            $existing = Accessory::query()
                 ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))
-                ->first();
+                ->get(['id', 'name', 'status'])
+                ->first(fn ($a) => mb_strtolower($a->name) === $wanted);
 
             if (!$existing) {
                 return;
